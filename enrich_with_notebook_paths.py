@@ -75,18 +75,22 @@ class DatabricksNotebookEnricher:
         self.cache[notebook_id] = result
         return result
 
-    def search_workspace(self, path: str = '/') -> list:
+    def search_workspace(self, path: str = '/', level: int = 0) -> list:
         """
         Lista objetos no workspace recursivamente.
 
         Args:
             path: Caminho para listar
+            level: Nível de recursão (para indentação)
 
         Returns:
             Lista de objetos encontrados
         """
         url = f'{self.workspace_url}/api/2.0/workspace/list'
         params = {'path': path}
+
+        indent = "  " * level
+        print(f"{indent}📂 Scanning: {path}")
 
         try:
             response = requests.get(url, headers=self.headers, params=params)
@@ -95,17 +99,25 @@ class DatabricksNotebookEnricher:
 
             objects = data.get('objects', [])
             all_objects = []
+            notebook_count = 0
+            dir_count = 0
 
             for obj in objects:
                 all_objects.append(obj)
                 # If it's a directory, recurse
                 if obj.get('object_type') == 'DIRECTORY':
-                    all_objects.extend(self.search_workspace(obj['path']))
+                    dir_count += 1
+                    all_objects.extend(self.search_workspace(obj['path'], level + 1))
+                elif obj.get('object_type') == 'NOTEBOOK':
+                    notebook_count += 1
+
+            if notebook_count > 0 or dir_count > 0:
+                print(f"{indent}   ✓ Found: {notebook_count} notebooks, {dir_count} directories")
 
             return all_objects
 
         except requests.exceptions.RequestException as e:
-            print(f"Error listing workspace at {path}: {e}")
+            print(f"{indent}   ✗ Error listing workspace at {path}: {e}")
             return []
 
     def get_notebook_by_path(self, path: str) -> Optional[Dict]:
@@ -148,9 +160,17 @@ def enrich_notebook_usage_df(csv_path: str, workspace_url: str, token: str) -> p
     # Initialize enricher
     enricher = DatabricksNotebookEnricher(workspace_url, token)
 
-    print("Fetching workspace objects (this may take a while)...")
+    print("\n" + "="*100)
+    print("📡 FETCHING WORKSPACE OBJECTS")
+    print("="*100)
+    print("This may take several minutes depending on workspace size...\n")
+
     # Get all workspace objects
     all_objects = enricher.search_workspace('/')
+
+    print("\n" + "="*100)
+    print("📊 PROCESSING NOTEBOOKS")
+    print("="*100)
 
     # Create a mapping of object_id to path (if available in API response)
     object_id_to_path = {}
@@ -164,17 +184,26 @@ def enrich_notebook_usage_df(csv_path: str, workspace_url: str, token: str) -> p
                     'language': obj.get('language', 'Unknown')
                 }
 
-    print(f"Found {len(object_id_to_path)} notebooks in workspace")
+    print(f"\n✓ Total notebooks found in workspace: {len(object_id_to_path)}")
+    print(f"✓ Total objects scanned: {len(all_objects)}")
 
     # Add new columns
     df['notebook_path'] = None
     df['notebook_language'] = None
 
+    print("\n" + "="*100)
+    print("🔗 MATCHING NOTEBOOK IDs TO PATHS")
+    print("="*100)
+
     # Try to match notebook IDs
+    total_notebooks_to_match = 0
+    matched_notebooks = 0
+
     for idx, row in df.iterrows():
         notebook_ids_str = row['notebook_ids']
         if pd.notna(notebook_ids_str):
             notebook_ids = [nid.strip() for nid in str(notebook_ids_str).split(',')]
+            total_notebooks_to_match += len(notebook_ids)
 
             # Try to find paths for these notebooks
             paths = []
@@ -185,12 +214,20 @@ def enrich_notebook_usage_df(csv_path: str, workspace_url: str, token: str) -> p
                     info = object_id_to_path[notebook_id]
                     paths.append(info['path'])
                     languages.append(info['language'])
+                    matched_notebooks += 1
+                    print(f"  ✓ Matched: {notebook_id} → {info['path']}")
                 else:
                     paths.append(f"Unknown (ID: {notebook_id})")
                     languages.append('Unknown')
+                    print(f"  ✗ Not found: {notebook_id}")
 
             df.at[idx, 'notebook_path'] = ', '.join(paths)
             df.at[idx, 'notebook_language'] = ', '.join(set(languages))
+
+    print(f"\n✓ Successfully matched: {matched_notebooks}/{total_notebooks_to_match} notebooks")
+    if matched_notebooks < total_notebooks_to_match:
+        print(f"⚠ Note: {total_notebooks_to_match - matched_notebooks} notebooks could not be matched")
+        print("   This is normal - the internal notebook ID may differ from object_id")
 
     return df
 
