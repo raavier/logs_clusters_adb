@@ -2,7 +2,18 @@
 
 Projeto para análise de logs de clusters Databricks, com foco em extrair informações de uso de notebooks.
 
-## 📁 Estrutura do Projeto
+## 🎯 Duas Versões Disponíveis
+
+Este projeto oferece scripts para **duas formas de uso**:
+
+1. **Versão Local** (este README) - Para análise de logs baixados localmente
+2. **Versão Databricks** (ver [DATABRICKS_README.md](DATABRICKS_README.md)) - Para análise direta no Databricks consumindo Volumes ⭐ **RECOMENDADO**
+
+> **💡 Recomendação:** Se você quer **rodar dentro do Databricks** e consumir logs diretamente do Volume, veja [DATABRICKS_README.md](DATABRICKS_README.md).
+
+---
+
+## 📁 Estrutura do Projeto (Versão Local)
 
 ```
 .

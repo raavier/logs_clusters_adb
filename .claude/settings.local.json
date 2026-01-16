@@ -26,7 +26,10 @@
       "Bash(git commit -m \"feat: add manual notebook mapping option\n\n- Create template CSV for manual notebook ID mapping\n- Add enrich_with_manual_mapping.py script \\(faster alternative\\)\n- Update README with manual mapping instructions\n- Update gitignore to exclude notebook_mapping.csv\")",
       "Bash(git add enrich_with_notebook_paths.py)",
       "Bash(git commit -m \"feat: add progress indicators to API enrichment script\n\n- Add detailed progress prints during workspace scan\n- Show directory structure being scanned with indentation\n- Display notebook and directory counts per folder\n- Show matching progress with ✓/✗ indicators\n- Add summary statistics at each stage\")",
-      "Bash(git add -A)"
+      "Bash(git add -A)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: add notebook cache system for efficient enrichment\n\nAdd fetch_all_notebooks.py to create reusable cache of all workspace\nnotebooks. Update enrich_with_notebook_paths.py to use cache when\navailable, avoiding repeated API scans. Add notebook names and owners\nto enriched output. Update documentation with cache-based workflow.\nEOF\n\\)\")",
+      "Bash(git push origin master)",
+      "Bash(git commit -m \"fix: remove emoji characters for Windows console compatibility\")"
     ]
   }
 }
