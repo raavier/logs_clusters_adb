@@ -48,3 +48,8 @@ Thumbs.db
 temp/
 output/
 notebook_usage.csv
+notebook_usage_enriched.csv
+
+# Databricks credentials
+.databricks/
+.databrickscfg
