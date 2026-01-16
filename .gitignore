@@ -47,3 +47,4 @@ Thumbs.db
 *.log.bz2
 temp/
 output/
+notebook_usage.csv
