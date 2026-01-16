@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init)",
+      "Bash(git remote add origin https://github.com/raavier/logs_clusters_adb.git)",
+      "Bash(git add .)",
+      "Bash(git commit -m \"chore: init repository with logs and gitignore\")",
+      "Bash(git push -u origin main)"
+    ]
+  }
+}
