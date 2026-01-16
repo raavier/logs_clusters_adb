@@ -166,9 +166,7 @@ def parse_notebook_usage(log_file_path):
             'end_time': info['end_time'],
             'duration_seconds': duration,
             'notebook_ids': ', '.join(info['notebook_ids']) if info['notebook_ids'] else 'Unknown',
-            'num_notebooks': len(info['notebook_ids']),
-            'execution_contexts': ', '.join(info['execution_contexts']) if info['execution_contexts'] else 'None',
-            'num_activities': len(info['activities'])
+            'num_notebooks': len(info['notebook_ids'])
         })
 
     return notebook_sessions
@@ -191,14 +189,16 @@ def create_notebook_usage_dataframe(cluster_path):
     # Create DataFrame
     df = pd.DataFrame(notebook_usage)
 
-    # Add cluster info to each row
+    # Add cluster info to each row (excluding creator, created_by, org_id)
+    excluded_keys = ['creator', 'created_by', 'org_id']
     for key, value in cluster_info.items():
-        df[key] = value
+        if key not in excluded_keys:
+            df[key] = value
 
-    # Reorder columns
-    columns_order = ['cluster_id', 'cluster_name', 'creator', 'session_id',
+    # Reorder columns (removed creator, execution_contexts, num_activities)
+    columns_order = ['cluster_id', 'cluster_name', 'session_id',
                      'notebook_ids', 'num_notebooks', 'start_time', 'end_time',
-                     'duration_seconds', 'num_activities', 'execution_contexts']
+                     'duration_seconds']
 
     # Only use columns that exist
     columns_order = [col for col in columns_order if col in df.columns]
