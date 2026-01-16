@@ -50,6 +50,7 @@ temp/
 output/
 notebook_usage.csv
 notebook_usage_enriched.csv
+notebook_mapping.csv
 
 # Databricks credentials
 .databricks/

@@ -45,6 +45,29 @@ python parse_notebook_usage.py
 
 ### 2. Enriquecer com Paths dos Notebooks (Opcional)
 
+Existem duas formas de adicionar os caminhos dos notebooks:
+
+#### Opção A: Mapeamento Manual (Recomendado - Rápido)
+
+1. Copie o template de mapeamento:
+```bash
+cp notebook_mapping_template.csv notebook_mapping.csv
+```
+
+2. Edite `notebook_mapping.csv` e preencha as informações dos notebooks:
+```csv
+notebook_id,notebook_path,notebook_name,notebook_language
+2348817320275328,/Users/usuario/analise,Análise de Dados,Python
+1115877656785222,/Workspace/Reports/dashboard,Dashboard Principal,SQL
+```
+
+3. Execute o enriquecimento:
+```bash
+python enrich_with_manual_mapping.py
+```
+
+#### Opção B: Via API do Databricks (Automático - Lento)
+
 Para adicionar os caminhos dos notebooks usando a API do Databricks:
 
 #### a) Criar Personal Access Token
