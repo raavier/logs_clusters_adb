@@ -29,6 +29,7 @@ wheels/
 
 # Environment variables
 .env
+!.env.example
 .venv
 
 # IDE

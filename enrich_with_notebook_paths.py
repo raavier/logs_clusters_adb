@@ -8,6 +8,15 @@ import pandas as pd
 import requests
 from typing import Dict, Optional
 
+# Try to import python-dotenv
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+    DOTENV_AVAILABLE = True
+except ImportError:
+    DOTENV_AVAILABLE = False
+    print("Warning: python-dotenv not installed. Install with: pip install python-dotenv")
+
 
 class DatabricksNotebookEnricher:
     """Cliente para enriquecer dados de notebooks usando a API do Databricks."""

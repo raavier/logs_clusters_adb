@@ -21,6 +21,12 @@ Projeto para análise de logs de clusters Databricks, com foco em extrair inform
 
 ## 🚀 Como Usar
 
+### 0. Instalar Dependências
+
+```bash
+pip install -r requirements.txt
+```
+
 ### 1. Extrair Uso de Notebooks dos Logs
 
 ```bash
@@ -48,22 +54,28 @@ Para adicionar os caminhos dos notebooks usando a API do Databricks:
 3. Clique em **Generate New Token**
 4. Copie o token gerado
 
-#### b) Executar o script de enriquecimento
+#### b) Configurar credenciais
 
-**Opção 1: Via variáveis de ambiente (recomendado)**
+Copie o arquivo `.env.example` para `.env` e preencha com suas credenciais:
 
 ```bash
-export DATABRICKS_WORKSPACE_URL="https://adb-xxxxx.azuredatabricks.net"
-export DATABRICKS_TOKEN="dapi1234567890abcdef"
+cp .env.example .env
+# Edite o arquivo .env com suas credenciais
+```
+
+Conteúdo do `.env`:
+```bash
+DATABRICKS_WORKSPACE_URL=https://adb-xxxxx.azuredatabricks.net
+DATABRICKS_TOKEN=dapi1234567890abcdef
+```
+
+#### c) Executar o script de enriquecimento
+
+```bash
 python enrich_with_notebook_paths.py
 ```
 
-**Opção 2: Entrada interativa**
-
-```bash
-python enrich_with_notebook_paths.py
-# O script pedirá a URL do workspace e o token
-```
+> O script lerá automaticamente as credenciais do arquivo `.env`
 
 **Output:** `notebook_usage_enriched.csv` com colunas adicionais:
 - `notebook_path` - Caminho do notebook no workspace
