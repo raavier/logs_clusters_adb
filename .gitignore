@@ -51,6 +51,7 @@ output/
 notebook_usage.csv
 notebook_usage_enriched.csv
 notebook_mapping.csv
+notebooks_cache.csv
 
 # Databricks credentials
 .databricks/

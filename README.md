@@ -45,9 +45,33 @@ python parse_notebook_usage.py
 
 ### 2. Enriquecer com Paths dos Notebooks (Opcional)
 
-Existem duas formas de adicionar os caminhos dos notebooks:
+Existem três formas de adicionar os caminhos dos notebooks:
 
-#### Opção A: Mapeamento Manual (Recomendado - Rápido)
+#### Opção A: Cache de Notebooks (Recomendado - Rápido e Reutilizável)
+
+Esta opção cria um cache de TODOS os notebooks do workspace que pode ser reutilizado:
+
+1. Execute o script para criar o cache (executa uma vez, reutiliza várias vezes):
+```bash
+python fetch_all_notebooks.py
+```
+
+Isso criará o arquivo `notebooks_cache.csv` com todos os notebooks do workspace.
+
+2. Use o cache para enriquecer (rápido - não faz chamadas à API):
+```bash
+python enrich_with_notebook_paths.py
+```
+
+O script detecta automaticamente se o cache existe e o utiliza, sem precisar das credenciais!
+
+**Vantagens:**
+- Execute a varredura do workspace apenas uma vez
+- Enriqueça múltiplos relatórios sem precisar escanear novamente
+- Mais rápido que a integração direta com API
+- Para atualizar o cache, basta executar `fetch_all_notebooks.py` novamente
+
+#### Opção B: Mapeamento Manual (Alternativa - Rápido)
 
 1. Copie o template de mapeamento:
 ```bash
@@ -66,7 +90,7 @@ notebook_id,notebook_path,notebook_name,notebook_language
 python enrich_with_manual_mapping.py
 ```
 
-#### Opção B: Via API do Databricks (Automático - Lento)
+#### Opção C: Via API do Databricks Direto (Automático - Lento)
 
 Para adicionar os caminhos dos notebooks usando a API do Databricks:
 
@@ -98,11 +122,13 @@ DATABRICKS_TOKEN=dapi1234567890abcdef
 python enrich_with_notebook_paths.py
 ```
 
-> O script lerá automaticamente as credenciais do arquivo `.env`
+> O script lerá automaticamente as credenciais do arquivo `.env` e fará a varredura completa do workspace toda vez que rodar. Para evitar isso, use a Opção A (Cache).
 
 **Output:** `notebook_usage_enriched.csv` com colunas adicionais:
-- `notebook_path` - Caminho do notebook no workspace
-- `notebook_language` - Linguagem do notebook (Python, SQL, etc.)
+- `notebook_names` - Nomes dos notebooks
+- `notebook_paths` - Caminhos dos notebooks no workspace
+- `notebook_languages` - Linguagens dos notebooks (Python, SQL, etc.)
+- `notebook_owners` - Proprietários dos notebooks
 
 ## 📊 Informações Extraídas
 

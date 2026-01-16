@@ -142,14 +142,16 @@ class DatabricksNotebookEnricher:
             return None
 
 
-def enrich_notebook_usage_df(csv_path: str, workspace_url: str, token: str) -> pd.DataFrame:
+def enrich_notebook_usage_df(csv_path: str, workspace_url: str = None, token: str = None,
+                              cache_path: str = 'notebooks_cache.csv') -> pd.DataFrame:
     """
-    Enriquece o DataFrame de uso de notebooks com informações da API.
+    Enriquece o DataFrame de uso de notebooks com informações do cache ou da API.
 
     Args:
         csv_path: Caminho para o CSV gerado pelo parse_notebook_usage.py
-        workspace_url: URL do workspace Databricks
-        token: Personal Access Token
+        workspace_url: URL do workspace Databricks (opcional se cache existir)
+        token: Personal Access Token (opcional se cache existir)
+        cache_path: Caminho para o arquivo de cache de notebooks
 
     Returns:
         DataFrame enriquecido
@@ -157,39 +159,75 @@ def enrich_notebook_usage_df(csv_path: str, workspace_url: str, token: str) -> p
     # Read the CSV
     df = pd.read_csv(csv_path)
 
-    # Initialize enricher
-    enricher = DatabricksNotebookEnricher(workspace_url, token)
+    # Check if cache exists
+    if os.path.exists(cache_path):
+        print("\n" + "="*100)
+        print("📦 USING NOTEBOOKS CACHE")
+        print("="*100)
+        print(f"Loading cache from: {cache_path}\n")
 
-    print("\n" + "="*100)
-    print("📡 FETCHING WORKSPACE OBJECTS")
-    print("="*100)
-    print("This may take several minutes depending on workspace size...\n")
+        df_cache = pd.read_csv(cache_path)
 
-    # Get all workspace objects
-    all_objects = enricher.search_workspace('/')
+        # Create mapping from cache
+        object_id_to_path = {}
+        for _, row in df_cache.iterrows():
+            object_id = str(row['object_id'])
+            object_id_to_path[object_id] = {
+                'path': row['path'],
+                'name': row.get('name', 'Unknown'),
+                'language': row.get('language', 'Unknown'),
+                'owner': row.get('owner', 'Unknown')
+            }
 
-    print("\n" + "="*100)
-    print("📊 PROCESSING NOTEBOOKS")
-    print("="*100)
+        print(f"✓ Loaded {len(object_id_to_path)} notebooks from cache")
+        print(f"✓ Cache created at: {df_cache['fetched_at'].iloc[0] if 'fetched_at' in df_cache.columns else 'Unknown'}")
 
-    # Create a mapping of object_id to path (if available in API response)
-    object_id_to_path = {}
-    for obj in all_objects:
-        if obj.get('object_type') == 'NOTEBOOK':
-            # Note: The Databricks API might not return the internal notebook ID
-            # We'll need to use object_id if available
-            if 'object_id' in obj:
-                object_id_to_path[str(obj['object_id'])] = {
-                    'path': obj['path'],
-                    'language': obj.get('language', 'Unknown')
-                }
+    else:
+        print("\n" + "="*100)
+        print("⚠ CACHE NOT FOUND - FETCHING FROM API")
+        print("="*100)
+        print(f"Cache file '{cache_path}' not found.")
+        print("Tip: Run 'python fetch_all_notebooks.py' first to create a cache.\n")
 
-    print(f"\n✓ Total notebooks found in workspace: {len(object_id_to_path)}")
-    print(f"✓ Total objects scanned: {len(all_objects)}")
+        if not workspace_url or not token:
+            print("Error: workspace_url and token are required when cache doesn't exist!")
+            raise ValueError("Missing credentials for API access")
+
+        # Initialize enricher
+        enricher = DatabricksNotebookEnricher(workspace_url, token)
+
+        print("📡 Fetching workspace objects...")
+        print("This may take several minutes depending on workspace size...\n")
+
+        # Get all workspace objects
+        all_objects = enricher.search_workspace('/')
+
+        print("\n" + "="*100)
+        print("📊 PROCESSING NOTEBOOKS")
+        print("="*100)
+
+        # Create a mapping of object_id to path (if available in API response)
+        object_id_to_path = {}
+        for obj in all_objects:
+            if obj.get('object_type') == 'NOTEBOOK':
+                # Note: The Databricks API might not return the internal notebook ID
+                # We'll need to use object_id if available
+                if 'object_id' in obj:
+                    object_id_to_path[str(obj['object_id'])] = {
+                        'path': obj['path'],
+                        'name': obj['path'].split('/')[-1],
+                        'language': obj.get('language', 'Unknown'),
+                        'owner': 'Unknown'
+                    }
+
+        print(f"\n✓ Total notebooks found in workspace: {len(object_id_to_path)}")
+        print(f"✓ Total objects scanned: {len(all_objects)}")
 
     # Add new columns
-    df['notebook_path'] = None
-    df['notebook_language'] = None
+    df['notebook_names'] = None
+    df['notebook_paths'] = None
+    df['notebook_languages'] = None
+    df['notebook_owners'] = None
 
     print("\n" + "="*100)
     print("🔗 MATCHING NOTEBOOK IDs TO PATHS")
@@ -205,29 +243,47 @@ def enrich_notebook_usage_df(csv_path: str, workspace_url: str, token: str) -> p
             notebook_ids = [nid.strip() for nid in str(notebook_ids_str).split(',')]
             total_notebooks_to_match += len(notebook_ids)
 
-            # Try to find paths for these notebooks
+            # Try to find info for these notebooks
+            names = []
             paths = []
             languages = []
+            owners = []
 
             for notebook_id in notebook_ids:
                 if notebook_id in object_id_to_path:
                     info = object_id_to_path[notebook_id]
+                    names.append(info['name'])
                     paths.append(info['path'])
                     languages.append(info['language'])
+                    owners.append(info.get('owner', 'Unknown'))
                     matched_notebooks += 1
-                    print(f"  ✓ Matched: {notebook_id} → {info['path']}")
+                    print(f"  ✓ Matched: {notebook_id} → {info['name']}")
                 else:
+                    names.append(f"Unknown")
                     paths.append(f"Unknown (ID: {notebook_id})")
                     languages.append('Unknown')
+                    owners.append('Unknown')
                     print(f"  ✗ Not found: {notebook_id}")
 
-            df.at[idx, 'notebook_path'] = ', '.join(paths)
-            df.at[idx, 'notebook_language'] = ', '.join(set(languages))
+            df.at[idx, 'notebook_names'] = ' | '.join(names)
+            df.at[idx, 'notebook_paths'] = ' | '.join(paths)
+            df.at[idx, 'notebook_languages'] = ' | '.join(set(languages))
+            df.at[idx, 'notebook_owners'] = ' | '.join(set(owners))
 
     print(f"\n✓ Successfully matched: {matched_notebooks}/{total_notebooks_to_match} notebooks")
     if matched_notebooks < total_notebooks_to_match:
         print(f"⚠ Note: {total_notebooks_to_match - matched_notebooks} notebooks could not be matched")
         print("   This is normal - the internal notebook ID may differ from object_id")
+
+    # Reorder columns for better readability
+    columns_order = ['cluster_id', 'cluster_name', 'session_id',
+                     'notebook_ids', 'notebook_names', 'notebook_paths', 'notebook_languages', 'notebook_owners',
+                     'num_notebooks', 'start_time', 'end_time', 'duration_seconds']
+
+    # Only use columns that exist
+    columns_order = [col for col in columns_order if col in df.columns]
+    other_columns = [col for col in df.columns if col not in columns_order]
+    df = df[columns_order + other_columns]
 
     return df
 
@@ -266,7 +322,7 @@ def main():
 
     # Enrich the dataframe
     try:
-        enriched_df = enrich_notebook_usage_df(csv_path, workspace_url, token)
+        enriched_df = enrich_notebook_usage_df(csv_path, workspace_url, token, cache_path='notebooks_cache.csv')
 
         # Save enriched data
         output_file = 'notebook_usage_enriched.csv'

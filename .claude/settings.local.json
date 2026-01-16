@@ -5,7 +5,28 @@
       "Bash(git remote add origin https://github.com/raavier/logs_clusters_adb.git)",
       "Bash(git add .)",
       "Bash(git commit -m \"chore: init repository with logs and gitignore\")",
-      "Bash(git push -u origin main)"
+      "Bash(git push -u origin main)",
+      "Bash(git push -u origin master)",
+      "Bash(python parse_notebook_usage.py)",
+      "Bash(git add parse_notebook_usage.py .gitignore)",
+      "Bash(git commit -m \"feat: add notebook usage parser script\n\n- Parse log files to extract notebook usage information\n- Extract session IDs, notebook IDs, and timestamps\n- Create DataFrame with cluster metadata \\(creator, org_id, etc\\)\n- Calculate session duration and activity count\n- Export results to CSV\")",
+      "Bash(git push)",
+      "Bash(python -c \"import pandas as pd; df = pd.read_csv\\(''notebook_usage.csv''\\); print\\(''Colunas atuais:''\\); print\\(''\\\\n''.join\\([f''{i+1}. {col}'' for i, col in enumerate\\(df.columns\\)]\\)\\); print\\(f''\\\\n\\\\nShape: {df.shape}''\\); print\\(''\\\\n\\\\nPrimeiras linhas:''\\); print\\(df.head\\(\\).to_string\\(\\)\\)\")",
+      "Bash(git add parse_notebook_usage.py)",
+      "Bash(git commit -m \"refactor: remove unnecessary columns from notebook usage report\n\n- Remove creator, created_by, org_id columns\n- Remove execution_contexts and num_activities columns\n- Keep only essential columns for analysis\")",
+      "Bash(git add enrich_with_notebook_paths.py README.md .gitignore)",
+      "Bash(git commit -m \"feat: add Databricks API integration for notebook path enrichment\n\n- Create script to fetch notebook paths via Databricks REST API\n- Support Personal Access Token authentication\n- Add workspace search functionality\n- Create comprehensive README with usage instructions\n- Update gitignore for credentials and enriched outputs\")",
+      "Bash(pip install python-dotenv)",
+      "Bash(git add requirements.txt .env.example .gitignore README.md enrich_with_notebook_paths.py)",
+      "Bash(git commit -m \"feat: add .env support for Databricks credentials\n\n- Create requirements.txt with dependencies\n- Add .env.example template for credentials\n- Update enrich script to use python-dotenv\n- Update README with .env configuration instructions\n- Ensure .env is excluded from version control\")",
+      "Bash(python -c \"from dotenv import load_dotenv; import os; load_dotenv\\(\\); print\\(''DATABRICKS_WORKSPACE_URL:'', os.getenv\\(''DATABRICKS_WORKSPACE_URL''\\) or ''NOT SET''\\); print\\(''DATABRICKS_TOKEN:'', ''SET'' if os.getenv\\(''DATABRICKS_TOKEN''\\) else ''NOT SET''\\)\")",
+      "Bash(python -c \"from dotenv import load_dotenv; import os; load_dotenv\\(\\); print\\(''DATABRICKS_WORKSPACE_URL:'', os.getenv\\(''DATABRICKS_WORKSPACE_URL''\\) or ''NOT SET''\\); print\\(''DATABRICKS_TOKEN:'', ''SET \\('' + os.getenv\\(''DATABRICKS_TOKEN''\\)[:15] + ''...\\)'' if os.getenv\\(''DATABRICKS_TOKEN''\\) else ''NOT SET''\\)\")",
+      "Bash(python enrich_with_notebook_paths.py)",
+      "Bash(git add notebook_mapping_template.csv enrich_with_manual_mapping.py .gitignore README.md)",
+      "Bash(git commit -m \"feat: add manual notebook mapping option\n\n- Create template CSV for manual notebook ID mapping\n- Add enrich_with_manual_mapping.py script \\(faster alternative\\)\n- Update README with manual mapping instructions\n- Update gitignore to exclude notebook_mapping.csv\")",
+      "Bash(git add enrich_with_notebook_paths.py)",
+      "Bash(git commit -m \"feat: add progress indicators to API enrichment script\n\n- Add detailed progress prints during workspace scan\n- Show directory structure being scanned with indentation\n- Display notebook and directory counts per folder\n- Show matching progress with ✓/✗ indicators\n- Add summary statistics at each stage\")",
+      "Bash(git add -A)"
     ]
   }
 }
