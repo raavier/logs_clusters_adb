@@ -90,7 +90,7 @@ class DatabricksNotebookEnricher:
         params = {'path': path}
 
         indent = "  " * level
-        print(f"{indent}📂 Scanning: {path}")
+        print(f"{indent}Scanning: {path}")
 
         try:
             response = requests.get(url, headers=self.headers, params=params)
@@ -112,12 +112,12 @@ class DatabricksNotebookEnricher:
                     notebook_count += 1
 
             if notebook_count > 0 or dir_count > 0:
-                print(f"{indent}   ✓ Found: {notebook_count} notebooks, {dir_count} directories")
+                print(f"{indent}   Found: {notebook_count} notebooks, {dir_count} directories")
 
             return all_objects
 
         except requests.exceptions.RequestException as e:
-            print(f"{indent}   ✗ Error listing workspace at {path}: {e}")
+            print(f"{indent}   Error listing workspace at {path}: {e}")
             return []
 
     def get_notebook_by_path(self, path: str) -> Optional[Dict]:
@@ -162,7 +162,7 @@ def enrich_notebook_usage_df(csv_path: str, workspace_url: str = None, token: st
     # Check if cache exists
     if os.path.exists(cache_path):
         print("\n" + "="*100)
-        print("📦 USING NOTEBOOKS CACHE")
+        print("USING NOTEBOOKS CACHE")
         print("="*100)
         print(f"Loading cache from: {cache_path}\n")
 
@@ -179,12 +179,12 @@ def enrich_notebook_usage_df(csv_path: str, workspace_url: str = None, token: st
                 'owner': row.get('owner', 'Unknown')
             }
 
-        print(f"✓ Loaded {len(object_id_to_path)} notebooks from cache")
-        print(f"✓ Cache created at: {df_cache['fetched_at'].iloc[0] if 'fetched_at' in df_cache.columns else 'Unknown'}")
+        print(f"Loaded {len(object_id_to_path)} notebooks from cache")
+        print(f"Cache created at: {df_cache['fetched_at'].iloc[0] if 'fetched_at' in df_cache.columns else 'Unknown'}")
 
     else:
         print("\n" + "="*100)
-        print("⚠ CACHE NOT FOUND - FETCHING FROM API")
+        print("WARNING: CACHE NOT FOUND - FETCHING FROM API")
         print("="*100)
         print(f"Cache file '{cache_path}' not found.")
         print("Tip: Run 'python fetch_all_notebooks.py' first to create a cache.\n")
@@ -196,14 +196,14 @@ def enrich_notebook_usage_df(csv_path: str, workspace_url: str = None, token: st
         # Initialize enricher
         enricher = DatabricksNotebookEnricher(workspace_url, token)
 
-        print("📡 Fetching workspace objects...")
+        print("Fetching workspace objects...")
         print("This may take several minutes depending on workspace size...\n")
 
         # Get all workspace objects
         all_objects = enricher.search_workspace('/')
 
         print("\n" + "="*100)
-        print("📊 PROCESSING NOTEBOOKS")
+        print("PROCESSING NOTEBOOKS")
         print("="*100)
 
         # Create a mapping of object_id to path (if available in API response)
@@ -220,8 +220,8 @@ def enrich_notebook_usage_df(csv_path: str, workspace_url: str = None, token: st
                         'owner': 'Unknown'
                     }
 
-        print(f"\n✓ Total notebooks found in workspace: {len(object_id_to_path)}")
-        print(f"✓ Total objects scanned: {len(all_objects)}")
+        print(f"\nTotal notebooks found in workspace: {len(object_id_to_path)}")
+        print(f"Total objects scanned: {len(all_objects)}")
 
     # Add new columns
     df['notebook_names'] = None
@@ -230,7 +230,7 @@ def enrich_notebook_usage_df(csv_path: str, workspace_url: str = None, token: st
     df['notebook_owners'] = None
 
     print("\n" + "="*100)
-    print("🔗 MATCHING NOTEBOOK IDs TO PATHS")
+    print("MATCHING NOTEBOOK IDs TO PATHS")
     print("="*100)
 
     # Try to match notebook IDs
@@ -257,23 +257,23 @@ def enrich_notebook_usage_df(csv_path: str, workspace_url: str = None, token: st
                     languages.append(info['language'])
                     owners.append(info.get('owner', 'Unknown'))
                     matched_notebooks += 1
-                    print(f"  ✓ Matched: {notebook_id} → {info['name']}")
+                    print(f"  Matched: {notebook_id} -> {info['name']}")
                 else:
                     names.append(f"Unknown")
                     paths.append(f"Unknown (ID: {notebook_id})")
                     languages.append('Unknown')
                     owners.append('Unknown')
-                    print(f"  ✗ Not found: {notebook_id}")
+                    print(f"  Not found: {notebook_id}")
 
             df.at[idx, 'notebook_names'] = ' | '.join(names)
             df.at[idx, 'notebook_paths'] = ' | '.join(paths)
             df.at[idx, 'notebook_languages'] = ' | '.join(set(languages))
             df.at[idx, 'notebook_owners'] = ' | '.join(set(owners))
 
-    print(f"\n✓ Successfully matched: {matched_notebooks}/{total_notebooks_to_match} notebooks")
+    print(f"\nSuccessfully matched: {matched_notebooks}/{total_notebooks_to_match} notebooks")
     if matched_notebooks < total_notebooks_to_match:
-        print(f"⚠ Note: {total_notebooks_to_match - matched_notebooks} notebooks could not be matched")
-        print("   This is normal - the internal notebook ID may differ from object_id")
+        print(f"Note: {total_notebooks_to_match - matched_notebooks} notebooks could not be matched")
+        print("This is normal - the internal notebook ID may differ from object_id")
 
     # Reorder columns for better readability
     columns_order = ['cluster_id', 'cluster_name', 'session_id',
@@ -339,7 +339,7 @@ def main():
         print("\n" + "="*100)
         print("SUMMARY:")
         print("="*100)
-        matched = enriched_df['notebook_path'].notna().sum()
+        matched = enriched_df['notebook_paths'].notna().sum()
         total = len(enriched_df)
         print(f"Total sessions: {total}")
         print(f"Sessions with matched paths: {matched}")
